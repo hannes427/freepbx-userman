@@ -1178,6 +1178,12 @@ class Openldap2 extends Auth {
 				$this->out("\t\tDeleting ".$user['username']);
 				$this->deleteUserByID($user['id'], false);
 				$this->userHooks['remove'][$user['id']] = [$user['id'], $user];
+				if(!empty($this->config['la']) && $user['default_extension'] !== 'none') {
+					$this->out("\t\t\tRemoving linked extension ".$user['default_extension']);
+					$this->FreePBX->Core->delDevice($user['default_extension']);
+					$this->FreePBX->Core->delUser($user['default_extension']);
+				}
+
 			}
 		}
 	}
