@@ -637,13 +637,19 @@ class Msad2 extends Auth {
 				}
 				$data = ["description" => !is_null($result->getDescription()) ? $result->getDescription() : '', "primary_group" => !is_null($result->getPrimaryGroupId()) ? $result->getPrimaryGroupId() : '', "fname" => !is_null($result->getFirstName()) ? $result->getFirstName() : '', "lname" => !is_null($result->getLastName()) ? $result->getLastName() : '', "displayname" => !is_null($result->getDisplayName()) ? $result->getDisplayName() : '', "department" => !empty($this->config['userdepartmentattr']) && !is_null($result->getAttribute($this->config['userdepartmentattr'],0)) ? $result->getAttribute($this->config['userdepartmentattr'],0) : '', "title" => !is_null($result->getTitle()) ? $result->getTitle() : '', "email" => !is_null($result->getEmail()) ? $result->getEmail() : '', "company" => !empty($this->config['usercompanyattr']) && !is_null($result->getAttribute($this->config['usercompanyattr'],0)) ? $result->getAttribute($this->config['usercompanyattr'],0) : '', "cell" => !empty($this->config['usercellphoneattr']) && !is_null($result->getAttribute($this->config['usercellphoneattr'],0)) ? $result->getAttribute($this->config['usercellphoneattr'],0) : '', "work" => !empty($this->config['userworkphoneattr']) && !is_null($result->getAttribute($this->config['userworkphoneattr'],0)) ? $result->getAttribute($this->config['userworkphoneattr'],0) : '', "fax" => !empty($this->config['userfaxphoneattr']) && !is_null($result->getAttribute($this->config['userfaxphoneattr'],0)) ? $result->getAttribute($this->config['userfaxphoneattr'],0) : '', "home" => !empty($this->config['userhomephoneattr']) && !is_null($result->getAttribute($this->config['userhomephoneattr'],0)) ? $result->getAttribute($this->config['userhomephoneattr'],0) : ''];
 				if(!empty($this->config['la']) && !is_null($result->getAttribute($this->config['la'],0))) {
+					$olduserdata = $this->getUserByID($um['id']);
 					$extension = $result->getAttribute($this->config['la'],0);
-					$d = $this->FreePBX->Core->getUser($extension);
-					if(!empty($d)) {
-						$this->out("\t\t\tLinking Extension ".$extension." to ".$username);
-						$data["default_extension"] = $extension;
-					} else {
-						$dn = !empty($data['displayname']) ? $data['displayname'] : $data['fname'] ." ".$data['lname'];
+					$dn = !empty($data['displayname']) ? $data['displayname'] : $data['fname'] ." ".$data['lname'];
+					$update_extension = false;
+					//Delete old data
+					if(isset($olduserdata['default_extension']) && ($olduserdata['default_extension'] !== $extension || $olduserdata['displayname'] !== $dn)) {
+						$this->FreePBX->Core->delDevice($olduserdata['default_extension']);
+						$this->FreePBX->Core->delUser($olduserdata['default_extension']);
+						$this->FreePBX->Core->delDevice($extension);
+						$this->FreePBX->Core->delUser($extension);
+						$update_extension = true;
+					}
+					if($um['new'] || $update_extension) {
 						if(!empty($this->config['createextensions'])) {
 							$tech = $this->config['createextensions'];
 							$this->out("\t\t\tCreating ".$tech." Extension ".$extension);
